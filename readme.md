@@ -3,8 +3,8 @@
 ### Índice
 
 - [Clase 1](#clase-1)
-  - [Ejercicio guiado: Instalación y primer script en Node.js](#ejercicio-guiado-instalacion-y-primer-script-en-nodejs)
-  - [Tarea asincrónica: Semana 1](#tarea-asincronica-semana-1)
+  - [Ejercicio guiado: Instalación y primer script en Node.js](#ejercicio-guiado-instalación-y-primer-script-en-nodejs)
+  - [Tarea asincrónica: Semana 1](#tarea-asincrónica-semana-1)
 - [Clase 2](#clase-2)
 
 ```text
@@ -57,3 +57,7 @@ o "fr" para francés.
 
 Construir un servidor básico con Express y TypeScript, modularizar rutas y
 aplicar un middleware personalizado
+
+[Ver carpeta del ejercicio](https://github.com/ferpiecel/integracion-back-end-node2025/tree/main/servidor-express-ts)
+
+![alt text](/recursos/image-clase-2.png)
