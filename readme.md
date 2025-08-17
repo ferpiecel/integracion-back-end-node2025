@@ -1,15 +1,25 @@
-## Curso de INTEGRACION Back-end(basado en Node.js)
+## Curso de INTEGRACION Back-end (basado en Node.js)
+
+### Índice
+
+- [Clase 1](#clase-1)
+  - [Ejercicio guiado: Instalación y primer script en Node.js](#ejercicio-guiado-instalacion-y-primer-script-en-nodejs)
+  - [Tarea asincrónica: Semana 1](#tarea-asincronica-semana-1)
+- [Clase 2](#clase-2)
 
 ```text
 Fernando López
 Centro de Desarrollo Sostenible S.A
+Repositorio para el curso de integración backend
 ```
 
 ---
 
-Clase 1.
+### Clase 1
 
-[Ejercicio Guiado – Instalación y Primer Script en Node.js](https://github.com/ferpiecel/integracion-back-end-node2025/tree/main/clase_1)
+#### Ejercicio guiado: Instalación y primer script en Node.js
+
+[Ver carpeta del ejercicio](https://github.com/ferpiecel/integracion-back-end-node2025/tree/main/clase_1)
 
 ```
 - Duración estimada: 1 hora
@@ -22,7 +32,9 @@ Clase 1.
 
 ---
 
-[Tarea Asincrónica – Semana 1](https://github.com/ferpiecel/integracion-back-end-node2025/tree/main/clase_1_tarea_asincrona)
+#### Tarea asincrónica: Semana 1
+
+[Ver carpeta de la tarea](https://github.com/ferpiecel/integracion-back-end-node2025/tree/main/clase_1_tarea_asincrona)
 
 ```
 Crea un archivo llamado saludos.js en tu carpeta de proyecto.
@@ -36,3 +48,12 @@ o "fr" para francés.
 ```
 
 ![alt text](/recursos/image-1.png)
+
+---
+
+### Clase 2
+
+### Ejercicio Guiado: Servidor con Express y TypeScript
+
+Construir un servidor básico con Express y TypeScript, modularizar rutas y
+aplicar un middleware personalizado
