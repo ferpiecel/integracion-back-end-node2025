@@ -18,7 +18,7 @@ Clase 1.
 - Herramientas: Navegador web + Visual Studio Code + (Terminal/Consola) + Node.js ya instalado.
 ```
 
-![alt text](image.png)
+![alt text](/recursos/image.png)
 
 ---
 
@@ -35,4 +35,4 @@ o "fr" para francés.
 
 ```
 
-![alt text](image-1.png)
+![alt text](/recursos/image-1.png)
