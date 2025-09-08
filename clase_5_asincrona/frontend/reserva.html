@@ -10,12 +10,50 @@
     <title>Reservas</title>
   </head>
   <body>
-    <h1>Reservas</h1>
+    <h1 id="reservas-title">Reservas</h1>
 
     <div id="reservas-list"></div>
 
     <script>
       console.log("Cargando reservas...");
+
+      async function getUserInfo() {
+        const token = localStorage.getItem("token");
+        const userId = localStorage.getItem("userId");
+
+        if (!token || !userId) {
+          console.error("No hay sesión activa.");
+          return;
+        }
+
+        try {
+          const res = await fetch(`http://localhost:3000/api/users/${userId}`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (!res.ok) {
+            const errText = await res.text();
+            console.error(
+              "Fallo al obtener información del usuario",
+              res.status,
+              errText
+            );
+            return;
+          }
+
+          const userInfo = await res.json();
+          console.log("Información del usuario:", userInfo);
+          document.getElementById(
+            "reservas-title"
+          ).innerHTML = `Reservas de ${userInfo.name} - ${userInfo.email}`;
+        } catch (err) {
+          console.error("Excepción al cargar información del usuario", err);
+        }
+      }
+
       async function loadReservas() {
         const token = localStorage.getItem("token");
         const userId = localStorage.getItem("userId");
@@ -70,7 +108,13 @@
             "No se pudieron cargar las reservas (error de red).";
         }
       }
-      window.onload = loadReservas;
+
+      async function init() {
+        await getUserInfo();
+        await loadReservas();
+      }
+
+      window.onload = init;
     </script>
   </body>
 </html>
