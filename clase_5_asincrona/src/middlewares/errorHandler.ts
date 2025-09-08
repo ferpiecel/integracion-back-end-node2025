@@ -68,9 +68,12 @@ function normalizeError(err: AnyError): CustomHttpError {
   if (code) {
     // Unique constraint violation
     if (code.startsWith("P2002")) {
-      return new ConflictError("Valor duplicado", {
-        target: err?.meta?.target,
-      });
+      return new ConflictError(
+        `El campo ${err?.meta?.target} tiene constraint de unicidad`,
+        {
+          target: err?.meta?.target,
+        }
+      );
     }
     // Record not found
     if (code.startsWith("P2025")) {
