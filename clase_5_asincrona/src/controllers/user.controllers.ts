@@ -1,13 +1,22 @@
-import { PrismaClient } from "@prisma/client";
+import { Request, Response, NextFunction } from "express";
+import { PrismaClient, User } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import { NextFunction, Request, Response } from "express";
+import { BadRequestError } from "../errors/httpErrors";
 
 const prisma = new PrismaClient();
 
 // Obtener lista de usuarios
-export const getUsers = async (req: Request, res: Response) => {
-  const users = await prisma.user.findMany();
-  res.json(users);
+export const getUsers = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const users = await prisma.user.findMany();
+    res.json(users);
+  } catch (error) {
+    next(error);
+  }
 };
 
 // Crear usuarios
@@ -17,10 +26,24 @@ export const createUser = async (
   next: NextFunction
 ) => {
   try {
-    const { name, email, password } = req.body;
-    const hashPassword = await bcrypt.hash(password, 10);
+    const { name, email, password } = req.body ?? {};
+
+    // Validación de campos requeridos
+    const missing: string[] = [];
+    if (!name || String(name).trim() === "") missing.push("name");
+    if (!email || String(email).trim() === "") missing.push("email");
+    if (!password || String(password).trim() === "") missing.push("password");
+    if (missing.length > 0) {
+      const msg =
+        missing.length === 1
+          ? `El campo '${missing[0]}' es requerido`
+          : `Los campos siguientes son requeridos: ${missing.join(", ")}`;
+      throw new BadRequestError(msg);
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
-      data: { name, email, password: hashPassword },
+      data: { name, email, password: hashedPassword },
     });
     res.json(user);
   } catch (error) {
@@ -62,37 +85,96 @@ export const deleteUser = async (
   }
 };
 
-// filtrado
-export const filterUser = async (req: Request, res: Response) => {
-  const { nombre } = req.params;
-
-  const listadoUser = await prisma.user.findMany({
-    where: {
-      name: {
-        contains: nombre,
+// Consultas avanzadas
+// Filter
+export const filterUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { nombre } = req.params;
+    const listadoUser = await prisma.user.findMany({
+      where: {
+        name: {
+          contains: nombre,
+          mode: "insensitive",
+        },
       },
-    },
-  });
-  res.json(listadoUser);
+    });
+    res.json(listadoUser);
+  } catch (error) {
+    next(error);
+  }
 };
 
-// Ordenar usuarios
-export const ordenUser = async (req: Request, res: Response) => {
-  const listadoUserOrdenado = await prisma.user.findMany({
-    orderBy: {
-      name: "desc",
-    },
-  });
-
-  res.json(listadoUserOrdenado);
+// OrderBy
+export const ordenUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const listadoUserOrdenado = await prisma.user.findMany({
+      orderBy: getOrderBy(req),
+    });
+    res.json(listadoUserOrdenado);
+  } catch (error) {
+    next(error);
+  }
 };
 
-// paginacion
-export const paginacionUser = async (req: Request, res: Response) => {
-  const listapaginada = await prisma.user.findMany({
-    skip: 2,
-    take: 3,
-  });
+// List paginations
+export const paginacionUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    let page = parseInt(String(req.query.page), 10);
+    let pageSize = parseInt(String(req.query.pageSize), 10);
 
-  res.json(listapaginada);
+    if (!Number.isFinite(page) || page < 1) page = 1;
+    if (!Number.isFinite(pageSize) || pageSize < 1) pageSize = 10;
+
+    const skip = (page - 1) * pageSize;
+
+    // Use a stable ordering for consistent pagination
+    const [total, users] = await prisma.$transaction([
+      prisma.user.count(),
+      prisma.user.findMany({
+        skip,
+        take: pageSize,
+        orderBy: getOrderBy(req),
+      }),
+    ]);
+
+    const totalPages = Math.ceil(total / pageSize) || 1;
+
+    res.json({
+      page,
+      pageSize,
+      total,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
+      data: users,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
+
+function getOrderBy(req: Request): any {
+  const allowedFields = new Set<keyof User>(["id", "email", "name"]);
+
+  const fieldRaw = String(req.query.field ?? "name");
+  const dirRaw = String(req.query.dir ?? "desc").toLowerCase();
+
+  const field = allowedFields.has(fieldRaw as any)
+    ? (fieldRaw as keyof User)
+    : "name";
+  const direction: "asc" | "desc" = dirRaw === "asc" ? "asc" : "desc";
+
+  return { [field]: direction };
+}
