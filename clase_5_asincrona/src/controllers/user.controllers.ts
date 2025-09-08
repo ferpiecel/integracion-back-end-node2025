@@ -5,6 +5,17 @@ import { BadRequestError } from "../errors/httpErrors";
 
 const prisma = new PrismaClient();
 
+// Helper para remover el password antes de responder
+function sanitizeUser<T extends { password?: any }>(user: T) {
+  if (!user) return user as any;
+  const { password, ...rest } = user as any;
+  return rest;
+}
+
+function sanitizeUsers(list: any[]) {
+  return Array.isArray(list) ? list.map(sanitizeUser) : list;
+}
+
 // Obtener lista de usuarios
 export const getUsers = async (
   req: Request,
@@ -13,7 +24,25 @@ export const getUsers = async (
 ) => {
   try {
     const users = await prisma.user.findMany();
-    res.json(users);
+    res.json(sanitizeUsers(users));
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Obtener usuario por ID
+export const getUserById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const user = await prisma.user.findUnique({ where: { id: Number(id) } });
+    if (!user) {
+      throw new BadRequestError("Usuario no encontrado");
+    }
+    res.json(user);
   } catch (error) {
     next(error);
   }
@@ -45,7 +74,7 @@ export const createUser = async (
     const user = await prisma.user.create({
       data: { name, email, password: hashedPassword },
     });
-    res.json(user);
+    res.json(sanitizeUser(user));
   } catch (error) {
     next(error);
   }
@@ -64,7 +93,7 @@ export const updateUser = async (
       where: { id: Number(id) },
       data: { name, email },
     });
-    res.json(user);
+    res.json(sanitizeUser(user));
   } catch (error) {
     next(error);
   }
@@ -102,7 +131,7 @@ export const filterUser = async (
         },
       },
     });
-    res.json(listadoUser);
+    res.json(sanitizeUsers(listadoUser));
   } catch (error) {
     next(error);
   }
@@ -118,7 +147,7 @@ export const ordenUser = async (
     const listadoUserOrdenado = await prisma.user.findMany({
       orderBy: getOrderBy(req),
     });
-    res.json(listadoUserOrdenado);
+    res.json(sanitizeUsers(listadoUserOrdenado));
   } catch (error) {
     next(error);
   }
@@ -158,7 +187,7 @@ export const paginacionUser = async (
       totalPages,
       hasNext: page < totalPages,
       hasPrev: page > 1,
-      data: users,
+      data: sanitizeUsers(users),
     });
   } catch (error) {
     next(error);
