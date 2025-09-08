@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,20 +9,93 @@
     />
     <title>Reservas</title>
   </head>
-  <body>
-    <h1 id="reservas-title">Reservas</h1>
+  <body class="bg-light">
+    <div
+      class="container min-vh-100 d-flex align-items-start justify-content-center py-4 py-md-5"
+    >
+      <div class="col-12 col-lg-10">
+        <div class="card shadow-sm border-0">
+          <div
+            class="card-header d-flex align-items-center justify-content-between"
+          >
+            <div>
+              <h1 class="h4 mb-0" id="reservas-title">Reservas</h1>
+              <small class="text-muted" id="subtitle"></small>
+            </div>
+            <div class="d-flex gap-2">
+              <button id="refreshBtn" class="btn btn-outline-secondary btn-sm">
+                Refrescar
+              </button>
+              <button id="logoutBtn" class="btn btn-outline-danger btn-sm">
+                Salir
+              </button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div
+              id="error"
+              class="alert alert-danger d-none"
+              role="alert"
+            ></div>
 
-    <div id="reservas-list"></div>
+            <div
+              id="loading"
+              class="d-flex align-items-center text-muted mb-3 d-none"
+            >
+              <div
+                class="spinner-border spinner-border-sm me-2"
+                role="status"
+                aria-hidden="true"
+              ></div>
+              Cargando...
+            </div>
+
+            <div id="reservas-list" class="table-responsive"></div>
+          </div>
+          <div class="card-footer text-muted small">© 2025</div>
+        </div>
+      </div>
+    </div>
 
     <script>
       console.log("Cargando reservas...");
+
+      const errorEl = document.getElementById("error");
+      const loadingEl = document.getElementById("loading");
+      const listEl = document.getElementById("reservas-list");
+      const titleEl = document.getElementById("reservas-title");
+      const subtitleEl = document.getElementById("subtitle");
+      const refreshBtn = document.getElementById("refreshBtn");
+      const logoutBtn = document.getElementById("logoutBtn");
+      let loadin = false; // controla el estado de carga
+
+      function showError(msg) {
+        errorEl.textContent = msg;
+        errorEl.classList.remove("d-none");
+      }
+
+      function clearError() {
+        errorEl.textContent = "";
+        errorEl.classList.add("d-none");
+      }
+
+      function setLoading(isLoading) {
+        loadin = isLoading;
+        if (isLoading) {
+          loadingEl.classList.remove("d-none");
+          if (refreshBtn) refreshBtn.disabled = true;
+        } else {
+          loadingEl.classList.add("d-none");
+          if (refreshBtn) refreshBtn.disabled = false;
+        }
+      }
 
       async function getUserInfo() {
         const token = localStorage.getItem("token");
         const userId = localStorage.getItem("userId");
 
         if (!token || !userId) {
-          console.error("No hay sesión activa.");
+          showError("No hay sesión activa. Iniciá sesión nuevamente.");
           return;
         }
 
@@ -41,27 +114,67 @@
               res.status,
               errText
             );
+            showError(
+              errText || "No se pudo cargar la información del usuario."
+            );
             return;
           }
 
           const userInfo = await res.json();
           console.log("Información del usuario:", userInfo);
-          document.getElementById(
-            "reservas-title"
-          ).innerHTML = `Reservas de ${userInfo.name} - ${userInfo.email}`;
+          titleEl.textContent = `Reservas de ${userInfo.name ?? "Usuario"}`;
+          subtitleEl.textContent = userInfo.email ? `(${userInfo.email})` : "";
         } catch (err) {
           console.error("Excepción al cargar información del usuario", err);
+          showError("Error de red al cargar la información del usuario.");
         }
+      }
+
+      function renderReservas(reservas) {
+        if (!Array.isArray(reservas) || reservas.length === 0) {
+          listEl.innerHTML =
+            '<div class="alert alert-info mb-0" role="alert">No hay reservas para este usuario.</div>';
+          return;
+        }
+
+        const rows = reservas
+          .map(
+            (r) => `
+            <tr>
+              <td class="text-nowrap">${r.id ?? "-"}</td>
+              <td>${r.fecha ?? "-"}</td>
+            </tr>
+          `
+          )
+          .join("");
+
+        listEl.innerHTML = `
+          <table class="table table-striped align-middle mb-0">
+            <thead>
+              <tr>
+                <th scope="col">ID Reserva</th>
+                <th scope="col">Fecha</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows}
+            </tbody>
+          </table>
+        `;
       }
 
       async function loadReservas() {
         const token = localStorage.getItem("token");
         const userId = localStorage.getItem("userId");
 
-        const container = document.getElementById("reservas-list");
+        clearError();
+        if (loadin) return; // evita múltiples cargas simultáneas
+        setLoading(true);
+        listEl.innerHTML = "";
+
         if (!token || !userId) {
-          container.textContent =
-            "No hay sesión activa. Inicie sesión nuevamente.";
+          setLoading(false);
+          showError("No hay sesión activa. Iniciá sesión nuevamente.");
           return;
         }
 
@@ -70,51 +183,49 @@
             `http://localhost:3000/api/reserva/${userId}`,
             {
               method: "GET",
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
+              headers: { Authorization: `Bearer ${token}` },
             }
           );
 
           if (!res.ok) {
             const errText = await res.text();
             console.error("Fallo al obtener reservas", res.status, errText);
-            container.textContent = `Error ${res.status}: ${
-              errText || "No se pudieron cargar las reservas."
-            }`;
+            showError(
+              `Error ${res.status}: ${
+                errText || "No se pudieron cargar las reservas."
+              }`
+            );
             return;
           }
 
           const reservas = await res.json();
           console.log("Reservas recibidas:", reservas);
-
-          if (!Array.isArray(reservas) || reservas.length === 0) {
-            container.textContent = "No hay reservas para este usuario.";
-            return;
-          }
-
-          container.innerHTML = reservas
-            .map(
-              (r) =>
-                `<div class="card mb-2 p-2">
-                    <p><strong>ID Reserva:</strong> ${r.id}</p>
-                    <p><strong>Fecha:</strong> ${r.fecha}</p>
-                </div>`
-            )
-            .join("");
+          renderReservas(reservas);
         } catch (err) {
           console.error("Excepción al cargar reservas", err);
-          container.textContent =
-            "No se pudieron cargar las reservas (error de red).";
+          showError("No se pudieron cargar las reservas (error de red).");
+        } finally {
+          setLoading(false);
         }
       }
 
+      function setupActions() {
+        refreshBtn?.addEventListener("click", loadReservas);
+        logoutBtn?.addEventListener("click", () => {
+          localStorage.removeItem("token");
+          localStorage.removeItem("userId");
+          window.location.href = "index.html";
+        });
+      }
+
       async function init() {
+        setupActions();
         await getUserInfo();
         await loadReservas();
       }
 
       window.onload = init;
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
   </body>
 </html>
