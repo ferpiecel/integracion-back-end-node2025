@@ -14,6 +14,27 @@ export const getReservas = async (
   res.json(reservas);
 };
 
+export const getReservasByUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const { id } = req.params;
+  try {
+    const reserva = await prisma.reserva.findMany({
+      where: { userId: Number(id) },
+    });
+    // if (!reserva) {
+    //   return res
+    //     .status(404)
+    //     .json({ error: "No se encontraron reservas para el usuario" });
+    // }
+    res.json(reserva);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const crearReserva = async (
   req: Request,
   res: Response,

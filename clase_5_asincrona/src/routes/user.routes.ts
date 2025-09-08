@@ -3,23 +3,24 @@ import {
   createUser,
   deleteUser,
   filterUser,
-  getUserById,
   getUsers,
   ordenUser,
   paginacionUser,
   updateUser,
+  getUserById,
 } from "../controllers/user.controllers";
+import { verifyToken } from "../middlewares/auth";
 
 const router = Router();
 
-router.get("/users", getUsers);
-router.get("/users/:id", getUserById);
-router.put("/users/:id", updateUser);
-router.post("/users", createUser);
-router.put("/users/:id", updateUser);
-router.delete("/users/:id", deleteUser);
-router.get("/users/filter/:nombre", filterUser);
-router.get("/users/order", ordenUser);
-router.get("/users/page", paginacionUser);
+router.get("/users", verifyToken, getUsers);
+router.put("/users/:id", verifyToken, updateUser);
+router.post("/users", verifyToken, createUser);
+router.put("/users/:id", verifyToken, updateUser);
+router.delete("/users/:id", verifyToken, deleteUser);
+router.get("/users/filter/:nombre", verifyToken, filterUser);
+router.get("/users/order", verifyToken, ordenUser);
+router.get("/users/page", verifyToken, paginacionUser);
+router.get("/users/:id", verifyToken, getUserById);
 
 export default router;

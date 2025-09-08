@@ -160,6 +160,7 @@ export const paginacionUser = async (
   next: NextFunction
 ) => {
   try {
+    console.log(req.query);
     let page = parseInt(String(req.query.page), 10);
     let pageSize = parseInt(String(req.query.pageSize), 10);
 

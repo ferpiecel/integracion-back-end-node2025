@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+    />
+    <title>Reservas</title>
+  </head>
+  <body>
+    <h1>Reservas</h1>
+
+    <div id="reservas-list"></div>
+
+    <script>
+      console.log("Cargando reservas...");
+      async function loadReservas() {
+        const token = localStorage.getItem("token");
+        const userId = localStorage.getItem("userId");
+
+        const container = document.getElementById("reservas-list");
+        if (!token || !userId) {
+          container.textContent =
+            "No hay sesión activa. Inicie sesión nuevamente.";
+          return;
+        }
+
+        try {
+          const res = await fetch(
+            `http://localhost:3000/api/reserva/${userId}`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (!res.ok) {
+            const errText = await res.text();
+            console.error("Fallo al obtener reservas", res.status, errText);
+            container.textContent = `Error ${res.status}: ${
+              errText || "No se pudieron cargar las reservas."
+            }`;
+            return;
+          }
+
+          const reservas = await res.json();
+          console.log("Reservas recibidas:", reservas);
+
+          if (!Array.isArray(reservas) || reservas.length === 0) {
+            container.textContent = "No hay reservas para este usuario.";
+            return;
+          }
+
+          container.innerHTML = reservas
+            .map(
+              (r) =>
+                `<div class="card mb-2 p-2">
+                    <p><strong>ID Reserva:</strong> ${r.id}</p>
+                    <p><strong>Fecha:</strong> ${r.fecha}</p>
+                </div>`
+            )
+            .join("");
+        } catch (err) {
+          console.error("Excepción al cargar reservas", err);
+          container.textContent =
+            "No se pudieron cargar las reservas (error de red).";
+        }
+      }
+      window.onload = loadReservas;
+    </script>
+  </body>
+</html>

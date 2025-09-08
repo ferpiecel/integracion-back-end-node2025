@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
+import { BadRequestError } from "../errors/httpErrors";
 
 dotenv.config();
 
@@ -15,7 +16,19 @@ export const login = async (
   res: Response,
   next: NextFunction
 ) => {
-  const { email, password } = req.body;
+  const { email, password } = req.body ?? {};
+
+  // Validación de campos requeridos
+  const missing: string[] = [];
+  if (!email || String(email).trim() === "") missing.push("email");
+  if (!password || String(password).trim() === "") missing.push("password");
+  if (missing.length > 0) {
+    const msg =
+      missing.length === 1
+        ? `El campo '${missing[0]}' es requerido`
+        : `Los campos siguientes son requeridos: ${missing.join(", ")}`;
+    throw new BadRequestError(msg);
+  }
 
   try {
     const user = await prisma.user.findUnique({ where: { email } });
@@ -35,6 +48,6 @@ export const login = async (
 
     res.json({ message: "Login exitoso", token, userId: user.id });
   } catch (err) {
-    res.status(500).json({ error: "Error en el login" });
+    res.status(500).json({ error: err });
   }
 };
